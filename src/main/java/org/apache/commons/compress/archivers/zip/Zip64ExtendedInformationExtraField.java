@@ -117,7 +117,7 @@ public class Zip64ExtendedInformationExtraField implements ZipExtraField {
     public ZipShort getCentralDirectoryLength() {
         return new ZipShort((size != null ? DWORD : 0)
                             + (compressedSize != null ? DWORD : 0)
-                            + (relativeHeaderOffset != null ? DWORD : 0)
+                            + 0
                             + (diskStart != null ? WORD : 0));
     }
 
@@ -139,8 +139,8 @@ public class Zip64ExtendedInformationExtraField implements ZipExtraField {
         final byte[] data = new byte[getCentralDirectoryLength().getValue()];
         int off = addSizes(data);
         if (relativeHeaderOffset != null) {
-            System.arraycopy(relativeHeaderOffset.getBytes(), 0, data, off, DWORD);
-            off += DWORD;
+//            System.arraycopy(relativeHeaderOffset.getBytes(), 0, data, off, DWORD);
+//            off += DWORD;
         }
         if (diskStart != null) {
             System.arraycopy(diskStart.getBytes(), 0, data, off, WORD);

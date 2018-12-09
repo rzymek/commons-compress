@@ -471,7 +471,7 @@ public class ZipArchiveOutputStream extends ArchiveOutputStream {
         writeCentralDirectoryInChunks();
 
         cdLength = streamCompressor.getTotalBytesWritten() - cdOffset;
-        writeZip64CentralDirectory();
+//        writeZip64CentralDirectory();
         writeCentralDirectoryEnd();
         metaData.clear();
         entries.clear();
@@ -1072,7 +1072,7 @@ public class ZipArchiveOutputStream extends ArchiveOutputStream {
 
         final byte[] extra = ze.getLocalFileDataExtra();
         final int nameLen = name.limit() - name.position();
-        final int len = LFH_FILENAME_OFFSET + nameLen + extra.length;
+        final int len = LFH_FILENAME_OFFSET + nameLen;
         final byte[] buf = new byte[len];
 
         System.arraycopy(LFH_SIG,  0, buf, LFH_SIG_OFFSET, WORD);
@@ -1106,8 +1106,10 @@ public class ZipArchiveOutputStream extends ArchiveOutputStream {
             // point to ZIP64 extended information extra field for
             // sizes, may get rewritten once sizes are known if
             // stream is seekable
-            ZipLong.ZIP64_MAGIC.putLong(buf, LFH_COMPRESSED_SIZE_OFFSET);
-            ZipLong.ZIP64_MAGIC.putLong(buf, LFH_ORIGINAL_SIZE_OFFSET);
+            putLong(0L, buf, LFH_COMPRESSED_SIZE_OFFSET);
+            putLong(0L, buf, LFH_ORIGINAL_SIZE_OFFSET);
+//            ZipLong.ZIP64_MAGIC.putLong(buf, LFH_COMPRESSED_SIZE_OFFSET);
+//            ZipLong.ZIP64_MAGIC.putLong(buf, LFH_ORIGINAL_SIZE_OFFSET);
         } else if (phased) {
             putLong(ze.getCompressedSize(), buf, LFH_COMPRESSED_SIZE_OFFSET);
             putLong(ze.getSize(), buf, LFH_ORIGINAL_SIZE_OFFSET);
@@ -1122,13 +1124,13 @@ public class ZipArchiveOutputStream extends ArchiveOutputStream {
         putShort(nameLen, buf, LFH_FILENAME_LENGTH_OFFSET);
 
         // extra field length
-        putShort(extra.length, buf, LFH_EXTRA_LENGTH_OFFSET);
+        putShort(0, buf, LFH_EXTRA_LENGTH_OFFSET);
 
         // file name
         System.arraycopy( name.array(), name.arrayOffset(), buf, LFH_FILENAME_OFFSET, nameLen);
 
         // extra fields
-        System.arraycopy(extra, 0, buf, LFH_FILENAME_OFFSET + nameLen, extra.length);
+//        System.arraycopy(extra, 0, buf, LFH_FILENAME_OFFSET + nameLen, extra.length);
 
         return buf;
     }
@@ -1300,7 +1302,7 @@ public class ZipArchiveOutputStream extends ArchiveOutputStream {
         putLong(ze.getExternalAttributes(), buf, CFH_EXTERNAL_ATTRIBUTES_OFFSET);
 
         // relative offset of LFH
-        if (entryMetaData.offset >= ZIP64_MAGIC || zip64Mode == Zip64Mode.Always) {
+        if (entryMetaData.offset >= ZIP64_MAGIC) {
             putLong(ZIP64_MAGIC, buf, CFH_LFH_OFFSET);
         } else {
             putLong(Math.min(entryMetaData.offset, ZIP64_MAGIC), buf, CFH_LFH_OFFSET);
@@ -1487,7 +1489,7 @@ public class ZipArchiveOutputStream extends ArchiveOutputStream {
     }
 
     private int versionNeededToExtract(final int zipMethod, final boolean zip64, final boolean usedDataDescriptor) {
-        if (zip64) {
+        if (zip64 || (zip64Mode == Zip64Mode.AsNeeded)) {
             return ZIP64_MIN_VERSION;
         }
         if (usedDataDescriptor) {
